@@ -8,8 +8,9 @@ import re
 
 load_dotenv()
 
-# AccuWeather APIKey
-weather_api = os.getenv("ACCUWEATHER_API")
+# Necessary APIKeyS
+weather_api = os.getenv("ACCUWEATHER_API_KEY")
+news_api = os.getenv("NEWS_API_KEY")
 
 # Initialize OpenAI client
 client = OpenAI(api_key=os.getenv("OPEN_AI_API_KEY"))
