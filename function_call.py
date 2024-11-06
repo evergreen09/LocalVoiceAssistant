@@ -5,6 +5,7 @@ import os
 import json
 from pydantic import BaseModel
 import re
+from datetime import datetime, timedelta
 
 load_dotenv()
 
@@ -21,6 +22,10 @@ Step 1 - The user will provide a query along with a list of functions with its n
 Step 2 - Figure out which parameters are required for selected function from previous step. Identify the appropriate value for a parameter or paremeters soley from the user query. Do not hallucinate.
 """
 
+news_summarization = """
+Your job is to summarize articles that are in a json format.
+"""
+
 function_list = """
 {
     "functionName": "get_weather",
@@ -28,10 +33,10 @@ function_list = """
     "parameter": {
         "location": "str"
     },
-    "functionName": "get_news",
-    "description": "Based on the topic parameter provided, the function returns top headline news related to the topic"
+    "functionName": "get_keyword_news",
+    "description": "Based on the keyword parameter provided, the function returns news related to the keyword"
     "parameter": {
-        "topic": "str"
+        "keyword": "str"
     },
     "functionName": "get_price",
     "description": "Returns a live price of a ticker symbol. The parameter must be in ticker symbol not the name of the asset, cryptocurrency, or a company like following: JNJ, DIS, INTC, V, KO, BTC, ETH, LTC, DJI."
@@ -61,6 +66,25 @@ def get_weather(location: str):
 
     print(f'The weather in {location} is {weather_condition} and the temperature is {temperature_c} celcius')
 
+def get_keyword_news(keyword: str):
+    date = (datetime.today() - timedelta(days=1)).strftime('%Y-%m-%d')
+    url = f'https://newsapi.org/v2/everything?q={keyword}&from={date}&sortBy=relevancy&apiKey={news_api}'
+    response = requests.get(url).json()
+    top_five = []
+    for index, article in enumerate(response['articles']):
+        if index < 5:
+            top_five.append(article)
+        else:
+            break
+    article_response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": f"{news_summarization}"},
+            {"role": "user", "content": f"Summarize following articles in 300 words: {top_five}"},
+        ]
+    )
+    print(article_response.choices[0].message.content)
+
 def get_task(user_query):
     task_function = client.beta.chat.completions.parse(
         model="gpt-4o-mini",
@@ -87,4 +111,4 @@ def get_task(user_query):
     except TypeError as e:
         print(f"Error calling function {function_name}: {e}")
 
-get_task("What's the weather in Busan?")
+get_task("Provide some news about the United States presidential election.")
