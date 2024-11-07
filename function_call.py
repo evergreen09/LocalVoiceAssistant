@@ -7,6 +7,7 @@ from pydantic import BaseModel
 import re
 from datetime import datetime, timedelta
 import ccxt
+import pygame
 import asyncio
 import time
 
@@ -45,7 +46,12 @@ function_list = """
     "functionName": "get_crypto_price",
     "description": "Returns the live price of cryptocurrency that user requested. The parameter must be in ticker symbol and not the name like following: XRP, ETH, LTC, BTC."
     "parameter": {
-        tickerSymobl: "str"
+        tickerSymbol: "str"
+    },
+    "functionName": "btc_alarm",
+    "description": "Sets alarm with target price. The target price parameter should be an integer."
+    "parameter": {
+        targetPrice: "int"
     }
 }
 """
@@ -54,6 +60,42 @@ function_list = """
 class chooseTask(BaseModel):
     function: str
     parameter: list[str]
+
+def btc_alarm(target_price):
+    target_price = int(target_price)
+    print(target_price)
+    price_url = f'https://okx.com/api/v5/market/ticker?instId=BTC-USDT-SWAP'
+    current_price = float(requests.get(price_url).json()['data'][0]['last'])
+    if current_price < target_price:
+        high_price_cross_alarm(target_price)
+    else: 
+        low_price_cross_alarm(target_price)
+
+def high_price_cross_alarm(target_price):
+    print('high')
+    current_price = 0.0
+    price_url = f'https://okx.com/api/v5/market/ticker?instId=BTC-USDT-SWAP'
+    while current_price < target_price:    
+        current_price = float(requests.get(price_url).json()['data'][0]['last'])
+        print(current_price)
+    pygame.mixer.init()
+    pygame.mixer.music.load('kanye_alarm.mp3')
+    pygame.mixer.music.play()
+    while pygame.mixer.music.get_busy():
+        time.sleep(1)
+
+def low_price_cross_alarm(target_price):
+    print('low')
+    current_price = 1000000.0
+    price_url = f'https://okx.com/api/v5/market/ticker?instId=BTC-USDT-SWAP'
+    while target_price < current_price:    
+        current_price = float(requests.get(price_url).json()['data'][0]['last'])
+        print(current_price)
+    pygame.mixer.init()
+    pygame.mixer.music.load('kanye_alarm.mp3')
+    pygame.mixer.music.play()
+    while pygame.mixer.music.get_busy():
+        time.sleep(1)
 
 def get_crypto_price(ticker: str):
     last_price = binance.fetch_ticker(f'{ticker}/USDT')['last']
@@ -128,3 +170,5 @@ def get_task(user_query):
             print(f"Function {function_name} not found.")
         except TypeError as e:
             print(f"Error calling function {function_name}: {e}")
+
+get_task("Set an alarm when bitcoin price crosses $80000")
