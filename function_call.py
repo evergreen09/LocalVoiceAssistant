@@ -6,8 +6,12 @@ import json
 from pydantic import BaseModel
 import re
 from datetime import datetime, timedelta
+import ccxt
+import asyncio
+import time
 
 load_dotenv()
+binance = ccxt.binance()
 
 # Necessary APIKeyS
 weather_api = os.getenv("ACCUWEATHER_API_KEY")
@@ -38,10 +42,10 @@ function_list = """
     "parameter": {
         "keyword": "str"
     },
-    "functionName": "get_price",
-    "description": "Returns a live price of a ticker symbol. The parameter must be in ticker symbol not the name of the asset, cryptocurrency, or a company like following: JNJ, DIS, INTC, V, KO, BTC, ETH, LTC, DJI."
+    "functionName": "get_crypto_price",
+    "description": "Returns the live price of cryptocurrency that user requested. The parameter must be in ticker symbol and not the name like following: XRP, ETH, LTC, BTC."
     "parameter": {
-        "ticker": "str"
+        tickerSymobl: "str"
     }
 }
 """
@@ -50,6 +54,10 @@ function_list = """
 class chooseTask(BaseModel):
     function: str
     parameter: list[str]
+
+def get_crypto_price(ticker: str):
+    last_price = binance.fetch_ticker(f'{ticker}/USDT')['last']
+    print(f'${last_price}')
 
 def get_location_key(location: str):
     url = f'http://dataservice.accuweather.com/locations/v1/cities/search?apikey={weather_api}&q={location}'
@@ -70,6 +78,7 @@ def get_keyword_news(keyword: str):
     date = (datetime.today() - timedelta(days=1)).strftime('%Y-%m-%d')
     url = f'https://newsapi.org/v2/everything?q={keyword}&from={date}&sortBy=relevancy&apiKey={news_api}'
     response = requests.get(url).json()
+    print(response)
     top_five = []
     for index, article in enumerate(response['articles']):
         if index < 5:
@@ -80,7 +89,7 @@ def get_keyword_news(keyword: str):
         model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": f"{news_summarization}"},
-            {"role": "user", "content": f"Summarize following articles in 300 words: {top_five}"},
+            {"role": "user", "content": f"Analyze following articles and provide concise description of articles as if you are a morning radio show host:{top_five}"},
         ]
     )
     print(article_response.choices[0].message.content)
@@ -99,16 +108,23 @@ def get_task(user_query):
     task_json = json.loads(task_response)
     function_name = task_json['function'].strip()
     params = task_json['parameter']
+    print(function_name)
     if len(params) == 1:
         argument = params[0]
-    print(params, argument)
-    print(function_name)
-    try:
-        function_call = globals()[function_name]
-        function_call(argument)
-    except AttributeError:
-        print(f"Function {function_name} not found.")
-    except TypeError as e:
-        print(f"Error calling function {function_name}: {e}")
+        print(params, argument)
 
-get_task("Provide some news about the United States presidential election.")
+        try:
+            function_call = globals()[function_name]
+            function_call(argument)
+        except AttributeError:
+            print(f"Function {function_name} not found.")
+        except TypeError as e:
+            print(f"Error calling function {function_name}: {e}")
+    else:
+        try:
+            function_call = globals()[function_name]
+            function_call()
+        except AttributeError:
+            print(f"Function {function_name} not found.")
+        except TypeError as e:
+            print(f"Error calling function {function_name}: {e}")
