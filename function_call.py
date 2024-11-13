@@ -1,6 +1,6 @@
 from openai import OpenAI
 from dotenv import load_dotenv
-import requests
+import httpx
 import os
 import json
 from pydantic import BaseModel
@@ -10,9 +10,11 @@ import ccxt
 import pygame
 import asyncio
 import time
+from alarm_clock import AlarmClock
 
 load_dotenv()
 binance = ccxt.binance()
+start_time = None
 
 # Necessary APIKeyS
 weather_api = os.getenv("ACCUWEATHER_API_KEY")
@@ -52,7 +54,18 @@ function_list = """
     "description": "Sets alarm with target price. The target price parameter should be an integer."
     "parameter": {
         targetPrice: "int"
+    },
+    "functionName": "set_timer",
+    "description": "Sets a timer in minutes. The timerTime parameter must be in seconds. If a user asks to set a timer in hours or minutes, convert it into seconds"
+    "parameter": {
+        timerTime: "int"
+    },
+    "functionName": "set_alarm",
+    "description": "Sets an alarm based on the user's desire time. The parameter should be in HH:MM where hour is in 24 hour format."
+    "parameter": {
+        alarm_time: "str"
     }
+
 }
 """
 
@@ -61,11 +74,28 @@ class chooseTask(BaseModel):
     function: str
     parameter: list[str]
 
+def set_timer(time):
+    global start_time
+    time = int(time)
+    print(time)
+    end_time = time.time()
+    timer_seconds = time - (end_time - start_time)
+    print(timer_seconds)
+    time.sleep(timer_seconds)
+
+def set_alarm(time):
+    pattern == r'^[0-9]:[0-9]$'
+    if re.match(pattern, time):
+        alarm = AlarmClock(time)
+        alarm.start
+    else:
+        print(f"Wrong time Format: {time}")
+
 def btc_alarm(target_price):
     target_price = int(target_price)
     print(target_price)
     price_url = f'https://okx.com/api/v5/market/ticker?instId=BTC-USDT-SWAP'
-    current_price = float(requests.get(price_url).json()['data'][0]['last'])
+    current_price = float(httpx.get(price_url).json()['data'][0]['last'])
     if current_price < target_price:
         high_price_cross_alarm(target_price)
     else: 
@@ -76,7 +106,7 @@ def high_price_cross_alarm(target_price):
     current_price = 0.0
     price_url = f'https://okx.com/api/v5/market/ticker?instId=BTC-USDT-SWAP'
     while current_price < target_price:    
-        current_price = float(requests.get(price_url).json()['data'][0]['last'])
+        current_price = float(httpx.get(price_url).json()['data'][0]['last'])
         print(current_price)
     pygame.mixer.init()
     pygame.mixer.music.load('kanye_alarm.mp3')
@@ -89,7 +119,7 @@ def low_price_cross_alarm(target_price):
     current_price = 1000000.0
     price_url = f'https://okx.com/api/v5/market/ticker?instId=BTC-USDT-SWAP'
     while target_price < current_price:    
-        current_price = float(requests.get(price_url).json()['data'][0]['last'])
+        current_price = float(httpx.get(price_url).json()['data'][0]['last'])
         print(current_price)
     pygame.mixer.init()
     pygame.mixer.music.load('kanye_alarm.mp3')
@@ -103,14 +133,14 @@ def get_crypto_price(ticker: str):
 
 def get_location_key(location: str):
     url = f'http://dataservice.accuweather.com/locations/v1/cities/search?apikey={weather_api}&q={location}'
-    response = requests.get(url).json()
+    response = httpx.get(url).json()
     key = response[0]['Key']
     return key
 
 def get_weather(location: str):
     key = get_location_key(location)
     url = f'http://dataservice.accuweather.com/currentconditions/v1/{key}?apikey={weather_api}'
-    response = requests.get(url).json()
+    response = httpx.get(url).json()
     weather_condition = response[0]['WeatherText']
     temperature_c = response[0]['Temperature']['Metric']['Value']
 
@@ -119,7 +149,7 @@ def get_weather(location: str):
 def get_keyword_news(keyword: str):
     date = (datetime.today() - timedelta(days=1)).strftime('%Y-%m-%d')
     url = f'https://newsapi.org/v2/everything?q={keyword}&from={date}&sortBy=relevancy&apiKey={news_api}'
-    response = requests.get(url).json()
+    response = httpx.get(url).json()
     print(response)
     top_five = []
     for index, article in enumerate(response['articles']):
@@ -137,6 +167,8 @@ def get_keyword_news(keyword: str):
     print(article_response.choices[0].message.content)
 
 def get_task(user_query):
+    global start_time
+    start_time = time.time()
     task_function = client.beta.chat.completions.parse(
         model="gpt-4o-mini",
         messages=[
@@ -171,4 +203,4 @@ def get_task(user_query):
         except TypeError as e:
             print(f"Error calling function {function_name}: {e}")
 
-get_task("Set an alarm when bitcoin price crosses $80000")
+get_task("Set a timer for 60 seconds")
