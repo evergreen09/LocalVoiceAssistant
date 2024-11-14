@@ -64,7 +64,8 @@ function_list = """
     "description": "Sets an alarm based on the user's desire time. The parameter should be in HH:MM where hour is in 24 hour format."
     "parameter": {
         alarm_time: "str"
-    }
+    },
+    
 
 }
 """
