@@ -11,6 +11,7 @@ import pygame
 import asyncio
 import time
 from alarm_clock import AlarmClock
+from speech import speech_to_text, text_to_speech
 
 load_dotenv()
 binance = ccxt.binance()
@@ -75,12 +76,11 @@ class chooseTask(BaseModel):
     function: str
     parameter: list[str]
 
-def set_timer(time):
+def set_timer(timer_duration):
     global start_time
-    time = int(time)
-    print(time)
+    timer_duration = int(timer_duration)
     end_time = time.time()
-    timer_seconds = time - (end_time - start_time)
+    timer_seconds = timer_duration - (end_time - start_time)
     print(timer_seconds)
     time.sleep(timer_seconds)
 
@@ -204,4 +204,3 @@ def get_task(user_query):
         except TypeError as e:
             print(f"Error calling function {function_name}: {e}")
 
-get_task("Set a timer for 60 seconds")
