@@ -5,3 +5,9 @@
 *.md
 *.env
 *.mp3
+*.session
+test.py
+markdown/
+notebook/
+outputFile/
+sourceFile/

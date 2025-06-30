@@ -12,6 +12,7 @@ import asyncio
 import time
 from alarm_clock import AlarmClock
 from speech import speech_to_text, text_to_speech
+from send_note import send_telegram_message
 
 load_dotenv()
 binance = ccxt.binance()

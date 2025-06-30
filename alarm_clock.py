@@ -14,7 +14,7 @@ api_id = os.getenv('api_id')
 api_hash = os.getenv('api_hash')
 phone_number = os.getenv('phone_number')
 bot_token = os.getenv('bot_token')
-bot_chat_id = 7181552894
+bot_chat_id = os.getenv('TELEGRAM_CHAT_ID')
 
 # Initialize the client
 client = TelegramClient('alarm_bot', api_id, api_hash)
