@@ -10,7 +10,6 @@ r = sr.Recognizer()
 
 mic = sr.Microphone()
 
-
 client = OpenAI(api_key=os.getenv("OPEN_AI_API_KEY"))
 
 def text_to_speech(prompt):

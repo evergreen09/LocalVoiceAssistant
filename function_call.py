@@ -1,7 +1,7 @@
 from openai import OpenAI
 from dotenv import load_dotenv
-import httpx
 import os
+import httpx
 import json
 from pydantic import BaseModel
 import re
@@ -84,13 +84,13 @@ def set_timer(timer_duration):
     print(timer_seconds)
     time.sleep(timer_seconds)
 
-def set_alarm(time):
+def set_alarm(alarm_time):
     pattern == r'^[0-9]:[0-9]$'
-    if re.match(pattern, time):
-        alarm = AlarmClock(time)
+    if re.match(pattern, alarm_time):
+        alarm = AlarmClock(alarm_time)
         alarm.start
     else:
-        print(f"Wrong time Format: {time}")
+        print(f"Wrong time Format: {alarm_time}")
 
 def btc_alarm(target_price):
     target_price = int(target_price)
