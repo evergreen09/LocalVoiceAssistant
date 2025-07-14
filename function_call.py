@@ -139,14 +139,39 @@ def get_location_key(location: str):
     key = response[0]['Key']
     return key
 
+def weather_safety_advice(weather_forecast_detail: str):
+    messages = [
+        {"role": "system", "content": """Your one and only job is to provide weather safety advices 
+        to the user based on a user prompt containing a weather forecast. 
+        Here are some examples of advices you should provide. 
+        It is expected to rain starting at 3PM. Please bring an umbrella with you if you plan to go out after 3PM.
+        The sun is expected to be really bright this afternoon. Please wear sunglasses to protect your eyes.
+        The temperature today is reaching over 30 degree celcius. Bring a water bottle with you if you plan to do outdoor activities.
+        """},
+        {"role": "user", "content": f"{weather_forecast_detail}"}
+    ]
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=messages,
+            max_tokens=300
+        )
+        # Note the new way to access the response content:
+        weather_advisory = response.choices[0].message.content.strip()
+    except Exception as e:
+        print(f"Error calling OpenAI API for word '{weather_forecast_detail}': {e}")
+        return f"Error fetching data for {weather_forecast_detail}."
+    return weather_advisory
+
 def get_weather(location: str):
     key = get_location_key(location)
     url = f'http://dataservice.accuweather.com/currentconditions/v1/{key}?apikey={weather_api}'
     response = httpx.get(url).json()
     weather_condition = response[0]['WeatherText']
     temperature_c = response[0]['Temperature']['Metric']['Value']
+    weather_forecast = f'The weather in {location} is {weather_condition} and the temperature is {temperature_c} celcius'
 
-    print(f'The weather in {location} is {weather_condition} and the temperature is {temperature_c} celcius')
+    print(weather_forecast)
 
 def get_keyword_news(keyword: str):
     date = (datetime.today() - timedelta(days=1)).strftime('%Y-%m-%d')
