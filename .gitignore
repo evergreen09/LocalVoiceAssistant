@@ -6,6 +6,7 @@
 *.env
 *.mp3
 *.session
+code_block.py
 test.py
 markdown/
 notebook/
