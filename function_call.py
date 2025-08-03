@@ -7,12 +7,12 @@ from pydantic import BaseModel
 import re
 from datetime import datetime, timedelta
 import ccxt
-import pygame
+from playsound3 import playsound
 import asyncio
 import time
 from alarm_clock import AlarmClock
-from speech import speech_to_text, text_to_speech
 from send_note import send_telegram_message
+from m_tts import text_to_voice
 
 load_dotenv()
 binance = ccxt.binance()
@@ -110,11 +110,11 @@ def high_price_cross_alarm(target_price):
     while current_price < target_price:    
         current_price = float(httpx.get(price_url).json()['data'][0]['last'])
         print(current_price)
-    pygame.mixer.init()
-    pygame.mixer.music.load('kanye_alarm.mp3')
-    pygame.mixer.music.play()
-    while pygame.mixer.music.get_busy():
-        time.sleep(1)
+
+    cross_alarm_sound = playsound('sourceFile/kanye_alarm.mp3', block=False backend='afplay')
+    # Temp play alaram for 120 seconds -> Implement a method to turn off the alarm using telegram messenger or voice command
+    time.sleep(120)
+    cross_alarm_sound.stop() 
 
 def low_price_cross_alarm(target_price):
     print('low')
@@ -123,11 +123,12 @@ def low_price_cross_alarm(target_price):
     while target_price < current_price:    
         current_price = float(httpx.get(price_url).json()['data'][0]['last'])
         print(current_price)
-    pygame.mixer.init()
-    pygame.mixer.music.load('kanye_alarm.mp3')
-    pygame.mixer.music.play()
-    while pygame.mixer.music.get_busy():
-        time.sleep(1)
+        
+    cross_alarm_sound = playsound('sourceFile/kanye_alarm.mp3', block=False backend='afplay')
+    # Temp play alaram for 120 seconds -> Implement a method to turn off the alarm using telegram messenger or voice command
+    time.sleep(120)
+    cross_alarm_sound.stop() 
+
 
 def get_crypto_price(ticker: str):
     last_price = binance.fetch_ticker(f'{ticker}/USDT')['last']
@@ -172,6 +173,8 @@ def get_weather(location: str):
     weather_forecast = f'The weather in {location} is {weather_condition} and the temperature is {temperature_c} celcius'
 
     print(weather_forecast)
+    # Weather Forecast to Speech
+    text_to_voice(weather_forecast)
 
 def get_keyword_news(keyword: str):
     date = (datetime.today() - timedelta(days=1)).strftime('%Y-%m-%d')
@@ -229,4 +232,6 @@ def get_task(user_query):
             print(f"Function {function_name} not found.")
         except TypeError as e:
             print(f"Error calling function {function_name}: {e}")
+
+get_task("What's the weather in Seoul?")
 

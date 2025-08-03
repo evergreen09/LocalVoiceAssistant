@@ -6,9 +6,11 @@
 *.env
 *.mp3
 *.session
+*.DS_Store
 code_block.py
 test.py
 markdown/
 notebook/
 outputFile/
 sourceFile/
+__pycache__/
